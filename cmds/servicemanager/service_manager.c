@@ -198,6 +198,17 @@ int do_add_service(struct binder_state *bs,
     return 0;
 }
 
+static uint32_t get_svc_list_length() {
+    uint32_t len = 0;
+    struct svcinfo *si;
+    for (si = svclist; si != NULL; si = si->next) {
+        if (si->ptr != NULL) {
+            len++;
+        }
+    }
+    return len;
+}
+
 int svcmgr_handler(struct binder_state *bs,
                    struct binder_txn *txn,
                    struct binder_io *msg,
@@ -247,16 +258,16 @@ int svcmgr_handler(struct binder_state *bs,
         break;
 
     case SVC_MGR_LIST_SERVICES: {
-        unsigned n = bio_get_uint32(msg);
-
-        si = svclist;
-        while ((n-- > 0) && si)
-            si = si->next;
-        if (si && si->ptr) {
-            bio_put_string16(reply, si->name);
-            return 0;
+        const uint32_t n = get_svc_list_length();
+        bio_put_uint32(reply, n);
+        if (n > 0) {
+            for (si = svclist; si != NULL; si = si->next) {
+                if (si->ptr != NULL) {
+                    bio_put_string16(reply, si->name);
+                }
+            }
         }
-        return -1;
+        return 0;
     }
     default:
         ALOGE("unknown code %d\n", txn->code);
