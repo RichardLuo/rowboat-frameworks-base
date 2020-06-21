@@ -8,9 +8,16 @@ LOCAL_SHARED_LIBRARIES := libutils libbinder
 
 ifeq ($(TARGET_OS),linux)
 	LOCAL_CFLAGS += -DXP_UNIX
-	#LOCAL_SHARED_LIBRARIES += librt
+#   LOCAL_SHARED_LIBRARIES += librt
 endif
 
 LOCAL_MODULE:= service
+
+ifneq ($(TARGET_SIMULATOR),true)
+LOCAL_C_INCLUDES += bionic \
+					external/stlport/stlport
+LOCAL_SHARED_LIBRARIES += libstlport \
+						  libdl
+endif
 
 include $(BUILD_EXECUTABLE)
