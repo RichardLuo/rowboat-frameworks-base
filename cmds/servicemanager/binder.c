@@ -224,7 +224,7 @@ int binder_parse(struct binder_state *bs, struct binder_io *bio,
             }
             binder_dump_txn(txn);
             if (func) {
-                unsigned rdata[256/4];
+                unsigned rdata[2048];
                 struct binder_io msg;
                 struct binder_io reply;
                 int res;
@@ -424,6 +424,7 @@ static void *bio_alloc(struct binder_io *bio, uint32_t size)
     size = (size + 3) & (~3);
     if (size > bio->data_avail) {
         bio->flags |= BIO_F_OVERFLOW;
+        LOGE("no data! size:%u", size);
         return 0;
     } else {
         void *ptr = bio->data;
@@ -508,6 +509,7 @@ void bio_put_string16(struct binder_io *bio, const uint16_t *str)
 
     if (!str) {
         bio_put_uint32(bio, 0xffffffff);
+        LOGE("null str!");
         return;
     }
 
@@ -516,14 +518,18 @@ void bio_put_string16(struct binder_io *bio, const uint16_t *str)
 
     if (len >= (MAX_BIO_SIZE / sizeof(uint16_t))) {
         bio_put_uint32(bio, 0xffffffff);
+        LOGE("invalid len %u", len);
         return;
     }
 
     bio_put_uint32(bio, len);
     len = (len + 1) * sizeof(uint16_t);
     ptr = bio_alloc(bio, len);
-    if (ptr)
+    if (ptr) {
         memcpy(ptr, str, len);
+    } else {
+        LOGE("null ptr!");
+    }
 }
 
 void bio_put_string16_x(struct binder_io *bio, const char *_str)
